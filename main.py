@@ -25,16 +25,20 @@ for i in range(args.num_pts):
             break
 
 #Generate a Voronoi Diagram
+x_pts = np.linspace(0, 1, img_gray.shape[0] - 1)
+y_pts = np.linspace(0, 1, img_gray.shape[1] - 1)
+pts = [[x, y] for x in x_pts for y in y_pts]
 for n in range(args.num_iter):
     kd = KDTree(seed_pts)
     out_img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
     centroids = np.zeros((args.num_pts, 3))
-    for i in range(img_gray.shape[0]):
-        for j in range(img_gray.shape[1]):
-                _, idx = kd.query([i* 1./img_gray.shape[0], j * 1.0/img_gray.shape[1]], workers = 2)
-                centroids[idx][0] += i * 1.0/img_gray.shape[0] * (1 - img_gray[i, j]/255.)
-                centroids[idx][1] += j * 1.0/img_gray.shape[1] * (1- img_gray[i, j]/255.)
-                centroids[idx][2] += 1 - img_gray[i, j]/255.
+    _, idx_list = kd.query(pts, workers = 2)
+    for idx in idx_list:
+        x, y = seed_pts[idx][0], seed_pts[idx][1]
+        i, j = int(x * img_gray.shape[0]), int(y * img_gray.shape[1])
+        centroids[idx][0] += x * (1 - img_gray[i , j]/255.)
+        centroids[idx][1] += y * (1- img_gray[i, j]/255.)
+        centroids[idx][2] += 1 - img_gray[i, j]/255.
 
     out = []
     w = np.power(n + 1, -0.8) * args.learning_rate 
@@ -52,5 +56,5 @@ for n in range(args.num_iter):
         if sp[0] > 0 and sp[0] < 1 and sp[1] > 0 and sp[1] < 1:
             out_img[int(sp[0] * img_gray.shape[0])][int(sp[1] * img_gray.shape[1]), :] = [255, 255, 255] 
 
-output_filename = str(args.input_filename.with_stem(f"{args.input_filename.stem}_stippled"))
-cv2.imwrite(output_filename, out_img)
+    output_filename = str(args.input_filename.with_stem(f"{args.input_filename.stem}_stippled_{n}"))
+    cv2.imwrite(f"out/{output_filename}", out_img)
