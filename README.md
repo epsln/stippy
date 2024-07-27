@@ -12,9 +12,10 @@ python main.py input.jpg
 
 ## Otions 
 You can control some parameters using the following flags:
-	* `-lr` controls the learning rate. Higher numbers means a potentially quicker convergence but migh also cause instability.
-	* `-n` controls the number of iterations of the Lloyds algorithm to perform. Higher means yields a potentially better result at a cost of compute time. 
-	* `-p` controls the number of stippling points to use. 
+
+- `-lr` controls the learning rate. Higher numbers means a potentially quicker convergence but migh also cause instability.
+- `-n` controls the number of iterations of the Lloyds algorithm to perform. Higher means yields a potentially better result at a cost of compute time. 
+- `-p` controls the number of stippling points to use. 
 
 For example
 ```
