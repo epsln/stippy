@@ -53,9 +53,6 @@ for n in range(args.num_iter):
         seed_pts[i][0] -= (sp[0] - x) * w 
         seed_pts[i][1] -= (sp[1] - y) * w
 
-        if 0 < x < 1 and 0 < y < 1:
-        #    out_img[int(x)][int(y), :] = [255, 255, 255] 
-            out_img[int(x * img_gray.shape[0])][int(y * img_gray.shape[1]), :] = [0, 0, 255] 
         if 0 < sp[0] < 1 and 0 < sp[1] < 1:
             out_img[int(sp[0] * img_gray.shape[0])][int(sp[1] * img_gray.shape[1]), :] = [255, 255, 255] 
         i += 1
