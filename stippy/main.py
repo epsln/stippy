@@ -62,9 +62,23 @@ def main():
             output = p.starmap(weighted_centroid_compute, func_args) 
 
         for o in output:
-            for i, p in enumerate(o):
-                seed_pts[i][0] -= p[0]
-                seed_pts[i][1] -= p[1]
+            for i, c in enumerate(o):
+                centroids[i][0] += c[0]
+                centroids[i][1] += c[1]
+                centroids[i][2] += c[2]
+
+        for idx in set(idx_list):
+            cen = centroids[idx]
+            sp = seed_pts[idx]
+            if cen[2] != 0:
+                x = cen[0]/ cen[2]
+                y = cen[1]/ cen[2]
+            else:
+                x = sp[0]
+                y = sp[1]
+            
+            seed_pts[idx][0] -= (sp[0] - x) * w 
+            seed_pts[idx][1] -= (sp[1] - y) * w
 
         if args.debug:
             for sp in seed_pts:
