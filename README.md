@@ -2,6 +2,13 @@
 ## A simple weighted voronoi stippler in Python
 
 Stippy is a CLI tool that can vectorize images using stippling, which can prove useful for technical artists using Plotters or Laser engraving. It is based on this [paper](https://www.cs.ubc.ca/labs/imager/tr/2002/secord2002b/secord.2002b.pdf).
+# Installation 
+
+In a virtual env run:
+```
+pip install -r requirements.txt
+pip install -e .
+```
 
 # Use
 ## Basic use
@@ -19,7 +26,7 @@ You can control some parameters using the following flags:
 - `-w` controls the number of workers to use in the KDTree.
 - `-inv` inverts the image.
 
-## Example
+## Examples
 ```
 python main.py input.jpg -lr 20 -n 100 -p 10000 
 ```
