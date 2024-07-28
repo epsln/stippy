@@ -14,6 +14,7 @@ def main():
     parser.add_argument("-lr", help="Learning rate used for relaxation. Lower is slower but yield better results.", dest = "learning_rate", default = 25, type=float)
     parser.add_argument("-w", help="Number of workers used in the KDTree.", dest = "num_workers", default = 4, type=int)
     parser.add_argument("-inv", help="Invert the colors in the input image", action = "store_true", dest = "invert_img", default = False)
+    parser.add_argument("--debug", help="Activate debug mode", action = "store_true", dest = "debug", default = False)
     args = parser.parse_args()
 
     img = cv2.imread(args.input_filename.absolute().as_posix())
@@ -21,6 +22,8 @@ def main():
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     if args.invert_img:
         img_gray = 255 - img_gray
+    if args.debug:
+        output_image = np.zeros(img_gray.shape) 
 
     output_filename = args.input_filename.with_suffix("." + "svg")
 
@@ -45,7 +48,6 @@ def main():
 
     for n in range(args.num_iter):
         w = np.power(n + 1, -0.8) * args.learning_rate 
-        print(n)
         kd = KDTree(seed_pts)
         out_img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
         centroids = np.zeros((args.num_pts, 3))
@@ -54,6 +56,12 @@ def main():
         
     for sp in seed_pts:
         dwg.add(dwg.circle((sp[0] * img_gray.shape[0], sp[1] * img_gray.shape[1]), r = 0.1))
+
+    if args.debug:
+        for sp in seed_pts:
+            if 0 < sp[0] < 1 and 0 < sp[1] < 1:
+                output_image[int(sp[0] * img_gray.shape[0]), int(sp[1] * img_gray.shape[1])] = 255
+        cv2.imwrite("debug.jpg", output_image)
     dwg.save()
 
 if __name__ == "__main__":
