@@ -1,10 +1,11 @@
+from multiprocessing import Pool
 import argparse
 import cv2
 import numpy as np
 from scipy.spatial import KDTree 
 import svgwrite
 from pathlib import Path
-from .voronoi import weighted_centroid_compute
+from .voronoi import split, weighted_centroid_compute
 
 def main():
     parser = argparse.ArgumentParser("stippy")
@@ -22,8 +23,6 @@ def main():
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     if args.invert_img:
         img_gray = 255 - img_gray
-    if args.debug:
-        output_image = np.zeros(img_gray.shape) 
 
     output_filename = args.input_filename.with_suffix("." + "svg")
 
@@ -44,24 +43,37 @@ def main():
     #Generate a Voronoi Diagram
     x_pts = [i * 1.0/img_gray.shape[0] for i in range(img_gray.shape[0])] 
     y_pts = [i * 1.0/img_gray.shape[1] for i in range(img_gray.shape[1])] 
-    pts = [[x, y] for x in x_pts for y in y_pts]
+    points = [[x, y] for x in x_pts for y in y_pts]
 
     for n in range(args.num_iter):
+        if args.debug:
+            output_image = np.zeros(img_gray.shape) 
         w = np.power(n + 1, -0.8) * args.learning_rate 
         kd = KDTree(seed_pts)
-        out_img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
         centroids = np.zeros((args.num_pts, 3))
-        _, idx_list = kd.query(pts, workers = args.num_workers)
-        weighted_centroid_compute(args, w, img_gray, pts, seed_pts, idx_list)
-        
+        _, idx_list = kd.query(points, workers = args.num_workers)
+
+        func_args = []
+        for pts, idxs in zip(split(points, args.num_workers), split(idx_list, args.num_workers)):
+            sp = np.array([seed_pts[idx] for idx in idxs])
+            func_args.append((args, w, img_gray, pts, seed_pts, idxs))
+
+        with Pool(args.num_workers) as p:
+            output = p.starmap(weighted_centroid_compute, func_args) 
+
+        for o in output:
+            for i, p in enumerate(o):
+                seed_pts[i][0] -= p[0]
+                seed_pts[i][1] -= p[1]
+
+        if args.debug:
+            for sp in seed_pts:
+                if 0 < sp[0] < 1 and 0 < sp[1] < 1:
+                    output_image[int(sp[0] * img_gray.shape[0]), int(sp[1] * img_gray.shape[1])] = 255
+            cv2.imwrite(f"out/debug_{n}.jpg", output_image)
     for sp in seed_pts:
         dwg.add(dwg.circle((sp[0] * img_gray.shape[0], sp[1] * img_gray.shape[1]), r = 0.1))
 
-    if args.debug:
-        for sp in seed_pts:
-            if 0 < sp[0] < 1 and 0 < sp[1] < 1:
-                output_image[int(sp[0] * img_gray.shape[0]), int(sp[1] * img_gray.shape[1])] = 255
-        cv2.imwrite("debug.jpg", output_image)
     dwg.save()
 
 if __name__ == "__main__":
