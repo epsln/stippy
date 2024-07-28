@@ -4,6 +4,7 @@ import numpy as np
 from scipy.spatial import KDTree 
 import svgwrite
 from pathlib import Path
+from .voronoi import weighted_centroid_compute
 
 def main():
     parser = argparse.ArgumentParser("stippy")
@@ -41,32 +42,16 @@ def main():
     x_pts = [i * 1.0/img_gray.shape[0] for i in range(img_gray.shape[0])] 
     y_pts = [i * 1.0/img_gray.shape[1] for i in range(img_gray.shape[1])] 
     pts = [[x, y] for x in x_pts for y in y_pts]
+
     for n in range(args.num_iter):
+        w = np.power(n + 1, -0.8) * args.learning_rate 
+        print(n)
         kd = KDTree(seed_pts)
         out_img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
         centroids = np.zeros((args.num_pts, 3))
         _, idx_list = kd.query(pts, workers = args.num_workers)
-        for pt, idx in zip(pts, idx_list):
-            x, y = pt[0], pt[1]
-            i, j = int(x * img_gray.shape[0]), int(y * img_gray.shape[1])
-
-            centroids[idx][0] += x * (1 - img_gray[i , j]/255.)
-            centroids[idx][1] += y * (1- img_gray[i, j]/255.)
-            centroids[idx][2] += 1 - img_gray[i, j]/255.
-        w = np.power(n + 1, -0.8) * args.learning_rate 
-        i = 0 
-        for sp, cen in zip(seed_pts, centroids):
-            if cen[2] != 0:
-                x = cen[0]/ cen[2]
-                y = cen[1]/ cen[2]
-            else:
-                x = sp[0]
-                y = sp[1]
-            
-            seed_pts[i][0] -= (sp[0] - x) * w 
-            seed_pts[i][1] -= (sp[1] - y) * w
-
-            i += 1
+        weighted_centroid_compute(args, w, img_gray, pts, seed_pts, idx_list)
+        
     for sp in seed_pts:
         dwg.add(dwg.circle((sp[0] * img_gray.shape[0], sp[1] * img_gray.shape[1]), r = 0.1))
     dwg.save()
