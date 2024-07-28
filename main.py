@@ -2,6 +2,7 @@ import argparse
 import cv2
 import numpy as np
 from scipy.spatial import KDTree 
+import svgwrite
 from pathlib import Path
 
 parser = argparse.ArgumentParser("stippy")
@@ -14,8 +15,14 @@ args = parser.parse_args()
 img = cv2.imread(args.input_filename.absolute().as_posix())
 img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+output_filename = args.input_filename.with_suffix("." + "svg")
+
+dwg = svgwrite.Drawing(output_filename)
+dwg.viewbox(0, 0, img_gray.shape[0], img_gray.shape[1])
+
 #Generate random seed points lieing inside the input image using rejection sampling
 seed_pts = np.zeros((args.num_pts, 2)) 
+dwg.add(dwg.rect((0, 0), (img_gray.shape[0], img_gray.shape[1]), fill = "white"))
 for i in range(args.num_pts):
     for j in range(500):
         x = np.random.randint(img_gray.shape[0] - 1)
@@ -53,8 +60,7 @@ for n in range(args.num_iter):
         seed_pts[i][0] -= (sp[0] - x) * w 
         seed_pts[i][1] -= (sp[1] - y) * w
 
-        if 0 < sp[0] < 1 and 0 < sp[1] < 1:
-            out_img[int(sp[0] * img_gray.shape[0])][int(sp[1] * img_gray.shape[1]), :] = [255, 255, 255] 
         i += 1
-output_filename = str(args.input_filename.with_stem(f"{args.input_filename.stem}_stippled"))
-cv2.imwrite(f"{output_filename}", out_img)
+for sp in seed_pts:
+    dwg.add(dwg.circle((sp[0] * img_gray.shape[0], sp[1] * img_gray.shape[1]), r = 0.1))
+dwg.save()
