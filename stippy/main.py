@@ -41,8 +41,8 @@ def main():
                 break
 
     #Generate a Voronoi Diagram
-    x_pts = [i * 1.0/img_gray.shape[0] for i in range(img_gray.shape[0])] 
-    y_pts = [i * 1.0/img_gray.shape[1] for i in range(img_gray.shape[1])] 
+    x_pts = np.linspace(0, 1, img_gray.shape[0] - 1) 
+    y_pts = np.linspace(0, 1, img_gray.shape[1] - 1) 
     points = [[x, y] for x in x_pts for y in y_pts]
 
     for n in range(args.num_iter):
