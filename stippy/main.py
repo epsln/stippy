@@ -11,10 +11,15 @@ def main():
     parser.add_argument("-p", help="Total number of points using for stippling", default = 10000, dest = "num_pts", type=int)
     parser.add_argument("-n", help="Number of times the Lloyds algorithm is applied. Higher is slower but yields better results.", dest = "num_iter", default = 50, type=int)
     parser.add_argument("-lr", help="Learning rate used for relaxation. Lower is slower but yield better results.", dest = "learning_rate", default = 25, type=float)
+    parser.add_argument("-w", help="Number of workers used in the KDTree.", dest = "num_workers", default = 4, type=int)
+    parser.add_argument("-inv", help="Invert the colors in the input image", action = "store_true", dest = "invert_img", default = False)
     args = parser.parse_args()
 
     img = cv2.imread(args.input_filename.absolute().as_posix())
+
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if args.invert_img:
+        img_gray = 255 - img_gray
 
     output_filename = args.input_filename.with_suffix("." + "svg")
 
@@ -40,7 +45,7 @@ def main():
         kd = KDTree(seed_pts)
         out_img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
         centroids = np.zeros((args.num_pts, 3))
-        _, idx_list = kd.query(pts, workers = 4)
+        _, idx_list = kd.query(pts, workers = args.num_workers)
         for pt, idx in zip(pts, idx_list):
             x, y = pt[0], pt[1]
             i, j = int(x * img_gray.shape[0]), int(y * img_gray.shape[1])
