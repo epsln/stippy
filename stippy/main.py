@@ -6,6 +6,8 @@ from scipy.spatial import KDTree
 import svgwrite
 from pathlib import Path
 from .voronoi import split, weighted_centroid_compute
+from svgwrite import cm, mm   
+from python_tsp.heuristics import solve_tsp_simulated_annealing
 
 def main():
     parser = argparse.ArgumentParser("stippy")
@@ -15,6 +17,7 @@ def main():
     parser.add_argument("-lr", help="Learning rate used for relaxation. Lower is slower but yield better results.", dest = "learning_rate", default = 25, type=float)
     parser.add_argument("-w", help="Number of workers used in the KDTree.", dest = "num_workers", default = 4, type=int)
     parser.add_argument("-inv", help="Invert the colors in the input image", action = "store_true", dest = "invert_img", default = False)
+    parser.add_argument("-dpi", help="Set the DPI for the output svg.", dest = "dpi", default = 300, type = int)
     parser.add_argument("--debug", help="Activate debug mode", action = "store_true", dest = "debug", default = False)
     args = parser.parse_args()
 
@@ -26,12 +29,9 @@ def main():
 
     output_filename = args.input_filename.with_suffix("." + "svg")
 
-    dwg = svgwrite.Drawing(output_filename)
-    dwg.viewbox(0, 0, img_gray.shape[0], img_gray.shape[1])
 
     #Generate random seed points lieing inside the input image using rejection sampling
     seed_pts = np.zeros((args.num_pts, 2)) 
-    dwg.add(dwg.rect((0, 0), (img_gray.shape[0], img_gray.shape[1]), fill = "white"))
     for i in range(args.num_pts):
         for j in range(500):
             x = np.random.randint(img_gray.shape[0] - 1)
@@ -85,8 +85,33 @@ def main():
                 if 0 < sp[0] < 1 and 0 < sp[1] < 1:
                     output_image[int(sp[0] * img_gray.shape[0]), int(sp[1] * img_gray.shape[1])] = 255
             cv2.imwrite(f"out/debug_{n}.jpg", output_image)
-    for sp in seed_pts:
-        dwg.add(dwg.circle((sp[0] * img_gray.shape[0], sp[1] * img_gray.shape[1]), r = 0.1))
+    p = seed_pts[0] 
+    exclude_list = []
+    for i in range(seed_pts.shape[0] - 1):
+        n = 2
+        idx_list = kd.query(p, k = 15)[1]
+        in_list = False 
+        for idx in idx_list:
+            if idx not in exclude_list:
+                exclude_list.append(idx)
+                in_list = True
+                break
+
+        if not in_list:
+            while True:
+                idx = np.random.randint(0, seed_pts.shape[0])
+                if idx not in exclude_list:
+                    exclude_list.append(idx)
+                    break
+
+        p = seed_pts[idx].tolist()
+    
+    svg_size = (img_gray.shape[1] / args.dpi * 2.54 * 10, img_gray.shape[0] / args.dpi * 2.54 * 10)
+    dwg = svgwrite.Drawing(output_filename, size = (f'{svg_size[0]}mm', f'{svg_size[1]}mm'))
+    for idx in exclude_list:
+        sp = seed_pts[idx]
+        #TODO: Set point size as argument
+        dwg.add(dwg.circle((sp[1] * svg_size[0] * mm, sp[0] * svg_size[1] * mm), r = 0.25, fill = 'black'))
 
     dwg.save()
 
