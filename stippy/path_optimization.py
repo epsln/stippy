@@ -2,33 +2,18 @@ from scipy.spatial import KDTree
 import numpy as np
 
 def path_optimization(args, stipples):
-    p = stipples[0] 
-    exclude_list = []
-    
-    kd = KDTree(stipples)
-
-    for i in range(args.num_pts - 1):
-        n = 2
-        idx_list = kd.query(p, k = 15)[1]
-        in_list = False 
-        for idx in idx_list:
-            if idx not in exclude_list:
-                exclude_list.append(idx)
-                in_list = True
-                break
-
-        if not in_list:
-            while True:
-                idx = np.random.randint(0, args.num_pts)
-                if idx not in exclude_list:
-                    exclude_list.append(idx)
-                    break
-
-        p = stipples[idx].tolist()
-
+    #Greedy approach to path optimization
+    #Just choose the closest node to current one
+    p = [0, 0] 
+    buf_stipples = stipples
     optimized_stipples = []
-    for idx in exclude_list:
-        optimized_stipples.append(stipples[idx])
+    
+    while buf_stipples.shape[0] > 0: 
+        kd = KDTree(buf_stipples, compact_nodes = False, balanced_tree = False)
+        idx = kd.query(p)[1]
+        p = buf_stipples[idx].tolist()
+        buf_stipples = np.delete(buf_stipples, idx, axis = 0)
+        optimized_stipples.append(p)
 
     return optimized_stipples 
  

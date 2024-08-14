@@ -84,6 +84,8 @@ def compute_points(args, img):
                 if 0 < sp[0] < 1 and 0 < sp[1] < 1:
                     output_image[int(sp[0] * img.shape[0]), int(sp[1] * img.shape[1])] = 255
             cv2.imwrite(f"out/debug_{n}.jpg", output_image)
-    
-    stipples = path_optimization(args, stipples)
+
+    if args.opti: 
+        stipples = path_optimization(args, stipples)
+
     return stipples

@@ -15,6 +15,7 @@ def main():
     parser.add_argument("-w", help="Number of workers used in the KDTree.", dest = "num_workers", default = 4, type=int)
     parser.add_argument("-inv", help="Invert the colors in the input image", action = "store_true", dest = "invert_img", default = False)
     parser.add_argument("-dpi", help="Set the DPI for the output svg.", dest = "dpi", default = 300, type = int)
+    parser.add_argument("-o", help="Optimize the path by reordering the points. Useful for very large numbers of points.", dest = "opti", default = False, type = bool)
     parser.add_argument("--debug", help="Activate debug mode", action = "store_true", dest = "debug", default = False)
     args = parser.parse_args()
 
